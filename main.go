@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/cheggaaa/pb/v3"
-	"github.com/tealeg/xlsx"
-	"gopkg.in/webdeskltd/dadata.v2"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/cheggaaa/pb/v3"
+	"github.com/tealeg/xlsx"
+	"gopkg.in/webdeskltd/dadata.v2"
 )
 
 var ColumnsPriority = []int{3, 2}
@@ -48,6 +49,16 @@ func main() {
 	//клиент дадаты
 	dadataClient := dadata.NewDaData(DadataToken, "")
 
+	//стиль корректной ячейки
+	correctStyle := xlsx.NewStyle()
+	correctStyle.Fill.FgColor = "FFC6EFCE"
+	correctStyle.Fill.PatternType = "solid"
+
+	//стиль некорректной ячейки
+	incorrectStyle := xlsx.NewStyle()
+	incorrectStyle.Fill.FgColor = "FFFFC7CE"
+	incorrectStyle.Fill.PatternType = "solid"
+
 	bar := pb.Full.Start(sh.MaxRow)
 
 	for rowIndex := 0; rowIndex < sh.MaxRow; rowIndex++ {
@@ -65,9 +76,18 @@ func main() {
 
 		if rowIndex == 0 {
 			newCell := currentRow.AddCell()
-			newCell.Value = "Проверка DaData"
+			newCell.Value = "Адрес DaData"
+
+			newCell2 := currentRow.AddCell()
+			newCell2.Value = "Уровень фиас"
+
+			newCell3 := currentRow.AddCell()
+			newCell3.Value = "Проверка DaData"
 			continue
 		}
+
+		isCorrectAddress := false
+
 		for _, priority := range ColumnsPriority {
 			cellValue := currentRow.GetCell(priority - 1).Value
 
@@ -93,12 +113,31 @@ func main() {
 						}
 
 						newCell := currentRow.AddCell()
-						newCell.Value = curCellFiasVal
+						newCell.Value = firstItem.Value
+
+						newCell2 := currentRow.AddCell()
+						newCell2.Value = firstItem.Data.FiasLevel
+
+						if firstItem.Data.FiasLevel == "8" {
+							newCell.SetStyle(correctStyle)
+						} else {
+							newCell.SetStyle(incorrectStyle)
+						}
+
+						newCell3 := currentRow.AddCell()
+						newCell3.Value = curCellFiasVal
+						isCorrectAddress = true
 						break
 					}
 
 				}
 			}
+		}
+
+		if !isCorrectAddress {
+			newCell := currentRow.AddCell()
+			newCell.Value = "Не найден"
+			newCell.SetStyle(incorrectStyle)
 		}
 
 		//currIndex++
